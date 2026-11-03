@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from evaluation import summarize_results
+from src.metrics import summarize_results
 
 
 class SummaryTests(unittest.TestCase):
@@ -25,11 +25,10 @@ class SummaryTests(unittest.TestCase):
 class SavedOutputTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        output = Path(__file__).resolve().parents[1] / "results"
-        required = ["raw_results.csv", "summary.csv", "config_used.txt", "metadata.txt"]
-        
+        results = Path(__file__).resolve().parents[1] / "results"
+        output = results / "raw" / "full"
         cls.raw = pd.read_csv(output / "raw_results.csv")
-        cls.summary = pd.read_csv(output / "summary.csv")
+        cls.summary = pd.read_csv(results / "tables" / "full_summary.csv")
         cls.config = literal_eval((output / "config_used.txt").read_text())
         cls.metadata = literal_eval((output / "metadata.txt").read_text())
 
@@ -44,9 +43,6 @@ class SavedOutputTests(unittest.TestCase):
         self.assertTrue(counts.eq(config["repetitions"]).all())
         self.assertTrue(raw["seed"].is_unique)
         self.assertTrue(raw["success"].isin([0, 1]).all())
-        if "fit_seconds" in raw:
-            self.assertTrue(np.isfinite(raw["fit_seconds"]).all())
-            self.assertTrue((raw["fit_seconds"] >= 0).all())
         for name, default in [("weak_count", 0), ("weak_magnitude", .25)]:
             if name in raw:
                 self.assertTrue(raw[name].eq(config.get(name, default)).all())
@@ -64,24 +60,22 @@ class SavedOutputTests(unittest.TestCase):
     def test_saved_counts_and_metric_ranges(self):
         self.assert_valid_outputs(self.raw, self.summary, self.config, self.metadata)
 
-    def test_saved_harder_outputs(self):
+    def test_saved_weak_signal_outputs(self):
         root = Path(__file__).resolve().parents[1]
-        for name in ["results_weak_signals", "results_larger_p"]:
-            with self.subTest(output=name):
-                output = root / name
-                required = ["raw_results.csv", "summary.csv", "config_used.txt", "metadata.txt"]
-                if not all((output / file).is_file() for file in required):
-                    self.skipTest(f"Complete {name}.")
-                metadata = literal_eval((output / "metadata.txt").read_text())
-                if not metadata["complete"]:
-                    self.skipTest(f"The simulation in {name} is incomplete !!")
-                config = literal_eval((output / "config_used.txt").read_text())
-                raw = pd.read_csv(output / "raw_results.csv")
-                summary = pd.read_csv(output / "summary.csv")
-                self.assert_valid_outputs(raw, summary, config, metadata)
-                if name == "results_weak_signals":
-                    columns = ["seed", "design", "mu", "regime", "p", "k", "theta", "n", "penalty"]
-                    pd.testing.assert_frame_equal(self.raw[columns], raw[columns], check_exact=True)
+        name = "weak_signals"
+        output = root / "results" / "raw" / name
+        required = ["raw_results.csv", "config_used.txt", "metadata.txt"]
+        if not all((output / file).is_file() for file in required):
+            self.skipTest(f"Complete {name}.")
+        metadata = literal_eval((output / "metadata.txt").read_text())
+        if not metadata["complete"]:
+            self.skipTest(f"The simulation in {name} is incomplete !!")
+        config = literal_eval((output / "config_used.txt").read_text())
+        raw = pd.read_csv(output / "raw_results.csv")
+        summary = pd.read_csv(root / "results" / "tables" / f"{name}_summary.csv")
+        self.assert_valid_outputs(raw, summary, config, metadata)
+        columns = ["seed", "design", "mu", "regime", "p", "k", "theta", "n", "penalty"]
+        pd.testing.assert_frame_equal(self.raw[columns], raw[columns], check_exact=True)
 
     def test_broad_agreement_with_paper_threshold_pattern(self):
         # qualitative finite sample checks to see if everything is basically working as advertised in the paper

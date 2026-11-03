@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from src.metrics import (
-    summarize_results, wilson_interval, summarize_failure_modes, summarize_runtime,
+    summarize_results, wilson_interval, summarize_failure_modes,
 )
 
 
@@ -21,7 +21,6 @@ REGIME_TITLES = {"linear": "Linear", "sublinear": "Sublinear", "fractional": "Fr
 RUNS = {
     "Paper setting": "full",
     "Five weak effects": "weak_signals",
-    "Larger dimensions": "larger_p",
 }
 
 
@@ -150,48 +149,6 @@ def plot_diagnostics(raw, config, output_dir, tables_dir):
     save_figure(fig, output_dir, "03_failure_modes")
 
 
-def plot_runtime(raw, config, output_dir, tables_dir):
-    """Show the distribution of fit times over the larger-p experiment."""
-    runtime = raw.assign(fit_ms=1000 * raw["fit_seconds"])
-    summary = summarize_runtime(raw)
-    summary.to_csv(Path(tables_dir) / "runtime_distribution.csv", index=False)
-    dimensions = sorted(config["p_values"])
-    fig, axes = plt.subplots(len(config["regimes"]), len(config["designs"]),
-                             figsize=(11, 6.5), sharey=True, squeeze=False)
-    for row, regime in enumerate(config["regimes"]):
-        for col, design in enumerate(config["designs"]):
-            ax = axes[row, col]
-            facet = runtime[(runtime["design"] == design["name"]) & (runtime["regime"] == regime)]
-            values = [facet.loc[facet["p"] == p, "fit_ms"].to_numpy() for p in dimensions]
-            boxes = ax.boxplot(values, tick_labels=[str(p) for p in dimensions], showfliers=False,
-                               patch_artist=True, widths=.5, medianprops={"color": "black", "linewidth": 1.3})
-            for box, color in zip(boxes["boxes"], ["#0072B2", "#CC79A7"]):
-                box.set_facecolor(color)
-                box.set_alpha(.75)
-            ratio = summary.loc[(summary["design"] == design["name"])
-                                & (summary["regime"] == regime)
-                                & (summary["p"] == dimensions[-1]), "median_ratio"].iloc[0]
-            ax.text(.04, .94, f"Median {dimensions[-1]}/{dimensions[0]} = {ratio:.2f}×",
-                    transform=ax.transAxes, va="top", fontsize=9,
-                    bbox={"facecolor": "white", "edgecolor": "none", "alpha": .85})
-            ax.set_yscale("log")
-            ax.set_title(f"{REGIME_TITLES[regime]} — {design['name'].capitalize()}")
-            ax.set_axisbelow(True)
-            ax.grid(axis="y", alpha=.2)
-    fig.suptitle("Distribution of Lasso fit times as dimension increases", fontsize=16)
-    fig.supylabel("Lasso fit time (ms; logarithmic scale)")
-    fig.supxlabel("Dimension p", y=.155)
-    fig.text(.02, .015, f"Each box pools {summary['fits'].iloc[0]:,} fits over θ = 0.1, 0.3, …, 2.3 "
-             f"({config['repetitions']} trials per value); both n and k grow with p.\n"
-             "Gaussian predictors: independent (left) or Toeplitz, adjacent correlation 0.1 (right); noise SD = 0.5; active magnitudes = 1.\n"
-             "n = floor[2θk log(p − k)] + k + 1; α = 0.4, γ = 0.75. Timing includes fitting only, on the same machine and software.\n"
-             "Boxes: middle 50%; line: median; whiskers: data within 1.5 × IQR fences. Outlier markers hidden; all fits retained in summaries.\n"
-             "Boxes describe variability among fits, not confidence intervals for the medians.",
-             ha="left", va="bottom", fontsize=7.7, linespacing=1.4)
-    fig.tight_layout(rect=(.025, .21, 1, .95))
-    save_figure(fig, output_dir, "04_runtime")
-
-
 def create_figures(results_dir="results"):
     """Build all figures."""
     results_dir = Path(results_dir)
@@ -216,9 +173,7 @@ def create_figures(results_dir="results"):
     }):
         plot_recovery(summary, baseline_config, output_dir)
         plot_diagnostics(raw, baseline_config, output_dir, tables_dir)
-        large_raw, large_config = runs["Larger dimensions"]
-        plot_runtime(large_raw, large_config, output_dir, tables_dir)
-    print(f"Saved four final figures in {output_dir}; plotting tables in {tables_dir}")
+    print(f"Saved three final figures in {output_dir}; plotting tables in {tables_dir}")
 
 
 if __name__ == "__main__":

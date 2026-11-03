@@ -2,9 +2,9 @@ import unittest
 
 import numpy as np
 
-from dgp import generate_data, sample_size, sparsity_size
-from evaluation import evaluate_recovery
-from methods import fit_lasso, lasso_penalty
+from src.dgps import generate_data, sample_size, sparsity_size
+from src.metrics import evaluate_recovery
+from src.methods import fit_lasso, lasso_penalty
 
 
 class SimulationTests(unittest.TestCase):

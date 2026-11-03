@@ -73,15 +73,3 @@ def summarize_failure_modes(raw, theta):
     summary = summary.reset_index()
     summary["theta"] = theta
     return summary
-
-
-def summarize_runtime(raw):
-    """Summarizes fit times and ratios to the smallest p within each design/regime."""
-    runtime = raw.assign(fit_ms=1000 * raw["fit_seconds"])
-    summary = runtime.groupby(["design", "regime", "p"])["fit_ms"].agg(
-        fits="size", median_ms="median", q1_ms=lambda x: x.quantile(.25), q3_ms=lambda x: x.quantile(.75),
-    ).reset_index()
-    summary = summary.sort_values(["design", "regime", "p"]).reset_index(drop=True)
-    reference = summary.groupby(["design", "regime"])["median_ms"].transform("first")
-    summary["median_ratio"] = summary["median_ms"] / reference
-    return summary

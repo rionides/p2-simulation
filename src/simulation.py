@@ -9,7 +9,6 @@ import logging
 from pathlib import Path
 import platform
 from pprint import pformat
-from time import perf_counter
 import warnings
 
 import numpy as np
@@ -82,7 +81,7 @@ def run_simulations(config, output_dir):
     fields = [
         "design", "mu", "regime", "p", "k", "theta", "n", "penalty", "trial", "seed",
         "weak_count", "weak_magnitude", "success", "false_positives", "false_negatives",
-        "sign_errors", "n_iter", "dual_gap", "fit_seconds",
+        "sign_errors", "n_iter", "dual_gap",
     ]
     completed = 0
     settings = product(config["designs"], config["regimes"], config["p_values"], config["theta_values"])
@@ -106,9 +105,7 @@ def run_simulations(config, output_dir):
                     weak_count=config.get("weak_count", 0),
                     weak_magnitude=config.get("weak_magnitude", 0.25),
                 )
-                start = perf_counter()
                 model = fit_lasso(X, y, penalty, config["solver_tolerance"], config["max_iterations"])
-                fit_seconds = perf_counter() - start
                 scores = evaluate_recovery(beta, model.coef_, config["zero_tolerance"])
                 writer.writerow({
                     "design": design["name"], "mu": design["mu"], "regime": regime,
@@ -117,7 +114,6 @@ def run_simulations(config, output_dir):
                     "weak_count": config.get("weak_count", 0),
                     "weak_magnitude": config.get("weak_magnitude", 0.25),
                     "n_iter": model.n_iter_, "dual_gap": model.dual_gap_,
-                    "fit_seconds": fit_seconds,
                 })
                 completed += 1
                 if completed % config["log_every"] == 0 or completed == total:
@@ -156,7 +152,7 @@ def main():
     parser.add_argument("--config", choices=["all", *CONFIGS], default="all")
     parser.add_argument("--results", default="results", help="Root directory for all outputs.")
     args = parser.parse_args()
-    names = ["full", "weak_signals", "larger_p"] if args.config == "all" else [args.config]
+    names = ["full", "weak_signals"] if args.config == "all" else [args.config]
     for name in names:
         raw_dir = Path(args.results) / "raw" / name
         if args.stage == "simulate":

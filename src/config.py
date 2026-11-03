@@ -39,17 +39,9 @@ QUICK_CONFIG.update({
 WEAK_SIGNALS_CONFIG = CONFIG.copy()
 WEAK_SIGNALS_CONFIG["weak_count"] = 5
 
-# big big settings
-LARGER_P_CONFIG = CONFIG.copy()
-LARGER_P_CONFIG.update({
-    "p_values": [512, 1024],
-    "regimes": ["sublinear", "fractional"],
-})
-
 # Names accepted by the command line and Makefile
 CONFIGS = {
     "full": CONFIG,
     "quick": QUICK_CONFIG,
     "weak_signals": WEAK_SIGNALS_CONFIG,
-    "larger_p": LARGER_P_CONFIG,
 }
