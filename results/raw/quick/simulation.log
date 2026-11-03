@@ -1,0 +1,8 @@
+2026-10-28 14:57:29,470 Starting 90 trials; raw results: results_quick/raw_results.csv
+2026-10-28 14:57:29,510 [15/90] identity, linear, p=128, theta=2.30
+2026-10-28 14:57:29,522 [30/90] identity, sublinear, p=128, theta=2.30
+2026-10-28 14:57:29,529 [45/90] identity, fractional, p=128, theta=2.30
+2026-10-28 14:57:29,555 [60/90] toeplitz, linear, p=128, theta=2.30
+2026-10-28 14:57:29,565 [75/90] toeplitz, sublinear, p=128, theta=2.30
+2026-10-28 14:57:29,575 [90/90] toeplitz, fractional, p=128, theta=2.30
+2026-10-28 14:57:29,576 Finished. All 90 trial results have been saved.
