@@ -25,7 +25,7 @@ RUNS = {
 
 
 def read_run(directory):
-    """Read a completed run and its saved settings, not today's edited settings."""
+    """Read a completed run and its saved settings"""
     config = literal_eval((directory / "config_used.txt").read_text())
     metadata = literal_eval((directory / "metadata.txt").read_text())
     raw = pd.read_csv(directory / "raw_results.csv")
@@ -43,7 +43,7 @@ def read_run(directory):
 
 
 def save_figure(fig, output_dir, stem):
-    """Save a high-resolution preview and a vector PDF with embedded fonts."""
+    """Save a figure"""
     for extension in ["png", "pdf"]:
         fig.savefig(Path(output_dir) / f"{stem}.{extension}",
                     dpi=PLOT_CONFIG["dpi"], bbox_inches="tight", facecolor="white")
@@ -79,24 +79,19 @@ def plot_recovery(summary, config, output_dir):
                        xticks=[0, .5, 1, 1.5, 2], yticks=[0, .25, .5, .75, 1])
                 ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
                 ax.grid(axis="y", color=".9", linewidth=.65)
-        fig.suptitle("Exact Lasso recovery with strong and weak effects", fontsize=16, y=.985)
+        fig.suptitle("Lasso recovery with strong and weak effects", fontsize=16, y=.985)
         covariance = "Independent Gaussian predictors" if design["mu"] == 0 else f"Gaussian Toeplitz predictors: adjacent correlation = {design['mu']:g}"
         fig.text(.54, .945, f"{covariance}  |  Noise SD = {config['noise_sigma']:g}",
                  ha="center", fontsize=10)
         handles, labels = axes[0, 0].get_legend_handles_labels()
         fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(.54, .92),
                    ncol=2, frameon=False, fontsize=10)
-        fig.supxlabel(r"Sample-size multiplier $\theta$ (larger values give more observations)", y=.12)
+        fig.supxlabel(r"Sample-size multiplier $\theta$", y=.12)
         fig.supylabel("Probability of exact signed-support recovery", x=.015)
         reference = ("Dotted line: asymptotic identity threshold, θ = 1."
                      if design["mu"] == 0 else "Dotted lines: asymptotic Toeplitz bounds, θ ≈ 0.46 and 1.84.")
         caption = (
-            "Paper setting: all active magnitudes = 1. Weak setting: five active magnitudes = 0.25; the rest = 1.\n"
-            f"Points: {config['repetitions']} trials per condition. Shading: {100 * PLOT_CONFIG['confidence']:g}% pointwise Wilson Monte Carlo intervals.\n"
-            "Recovery requires every support location AND sign to be correct (estimated |β| ≤ 10⁻⁷ counts as zero).\n"
-            "n = floor[2θk log(p − k)] + k + 1; random support and ± signs; natural logs. "
-            "Sparsity uses α = 0.4, γ = 0.75.\n"
-            + reference + " These are large-sample references, not finite-sample guarantees."
+            " "
         )
         fig.text(.10, .008, caption, va="bottom", fontsize=7.7, linespacing=1.5)
         save_figure(fig, output_dir, f"{number:02d}_recovery_{design['name']}")
@@ -135,16 +130,10 @@ def plot_diagnostics(raw, config, output_dir, tables_dir):
             ax.grid(axis="y", alpha=.2)
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", ncol=5, bbox_to_anchor=(.5, .905), fontsize=9)
-    fig.suptitle("Why exact Lasso recovery fails", y=.995, fontsize=16)
+    fig.suptitle("Reasons for failure", y=.995, fontsize=16)
     fig.text(.5, .945, rf"$\theta={theta:g}$; paper: active effects $\pm1$; weak: five at $\pm0.25$, rest $\pm1$; "
              rf"noise SD $={config['noise_sigma']:g}$", ha="center", fontsize=10)
     fig.supylabel("Fraction of simulations")
-    fig.text(.02, .015,
-             f"{summary['trials'].iloc[0]:,} simulation trials per bar. Exact recovery requires every support location and sign to be correct.\n"
-             "Extra = a selected null variable; missed = an omitted true variable. Wrong-sign cases take priority; all categories sum to 100%.\n"
-             "Gaussian predictors: independent (left) or Toeplitz with adjacent correlation 0.1 (right); random support and signs.\n"
-             "n = floor[2θk log(p − k)] + k + 1; sparsity uses α = 0.4, γ = 0.75. Frequencies are descriptive; segments ≥12% are labeled.",
-             ha="left", va="bottom", fontsize=7.7, linespacing=1.4)
     fig.tight_layout(rect=(.025, .13, 1, .875))
     save_figure(fig, output_dir, "03_failure_modes")
 
@@ -173,11 +162,11 @@ def create_figures(results_dir="results"):
     }):
         plot_recovery(summary, baseline_config, output_dir)
         plot_diagnostics(raw, baseline_config, output_dir, tables_dir)
-    print(f"Saved three final figures in {output_dir}; plotting tables in {tables_dir}")
+    print(f"Saved three final figures")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--results", default="results", help="Results root containing raw runs.")
+    parser.add_argument("--results", default="results", help="the results root containing raw runs")
     args = parser.parse_args()
     create_figures(args.results)
