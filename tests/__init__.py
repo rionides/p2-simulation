@@ -1,1 +1,1 @@
-"""Tests for the simulation study."""
+"""Tests."""
